@@ -1,0 +1,17 @@
+function: state_evolution
+start_time: 0
+time: 9.42 # This is a dimensionless number - we set it to 2Pi to achieve a full orbit.
+steps: 300 # The number of steps significantly affects the performance of the mcsolve
+N: 50 # Everything in the range 50 to 100 seems to give good results
+M: 50
+alpha: 1. # Light field state
+beta: 1. # Mirror state
+gbar: 1. 
+k: 1.
+chi: 0.01   # Light field decoherence
+tolerance: 0.001  # RKF tolerance
+h: 0.01 # Step-size for the numerical derivative and values of gbar
+hmax: 1.
+hmin: 0.00001
+folder: Fisher_decoherence
+gamma: 0.0 #Coupling strengths between a and c light modes 
