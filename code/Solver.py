@@ -368,24 +368,28 @@ class Solver(object):
 
         # Solve each system for a psi with different g 
         results0 = mesolve(Hamiltonian0, state0, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
+        print "Tracing out states"
         for state in results0.states:
             psi0.append(state.ptrace(2))
         del results0
         gc.collect()
 
         results1 = mesolve(Hamiltonian1, state1, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
+        print "Tracing out states"
         for state in results1.states:
             psi1.append(state.ptrace(2))
         del results1
         gc.collect()
 
         results2 = mesolve(Hamiltonian2, state2, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
+        print "Tracing out states"
         for state in results2.states:
             psi2.append(state.ptrace(2))
         del results2
         gc.collect()
 
         resultsm1 = mesolve(Hamiltonianm1, statem1, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
+        print "Tracing out states"
         for state in resultsm1.states:
             psim1.append(state.ptrace(2))
         del resultsm1
@@ -393,6 +397,7 @@ class Solver(object):
 
 
         resultsm2 = mesolve(Hamiltonianm2, statem2, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
+        print "Tracing out states"
         for state in resultsm2.states:
             psim2.append(state.ptrace(2))
         del resultsm2
