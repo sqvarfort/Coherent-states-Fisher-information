@@ -44,6 +44,8 @@ class Solver(object):
 
         # Assign values to constants
         self.function = str(self.args['function'])
+        self.state = str(self.args['state'])
+        self.squeezing = str(self.args['squeezing'])
         self.start_time = float(self.args['start_time'])
         self.N = int(self.args['N'])
         self.M = int(self.args['M'])
@@ -78,7 +80,7 @@ class Solver(object):
             self.triple_state_evolution()
 
 
-    def initialise_start_time(self, arg, type = 'matrix'):
+    def initialise_coherent(self, arg, type = 'matrix'):
         """
         Parameters:
             arg: string, determines type 'ket' or 'dm' of outputted state
@@ -128,12 +130,15 @@ class Solver(object):
                 beta_terms.append(exp(-absolute(self.beta)**2/2.)*self.beta**n/(sqrt(factorial(n)))*fock(self.N,n))
             return tensor(sum(alpha_terms), sum(beta_terms)).full()
 
+    def intialise_squeezed(self, s):
+        return squeeze(self.N, self.sqeezing, offset = 0)
+
 
     def run_RKF45(self):
         # Create the vector
         states = []
         dstates = []
-        statevec = array([self.initialise_start_time('dm'), self.initialise_d_start_time('dm')])
+        statevec = array([self.initialise_coherent('dm'), self.initialise_d_start_time('dm')])
         print "Starting simulation."
         # Set decoherence
         self.Lind = sqrt(self.chi)*tensor(destroy(self.N), qeye(self.M))
@@ -203,7 +208,7 @@ class Solver(object):
         
         #state0 = tensor(coherent(self.N, self.alpha), coherent(self.N, self.beta))
 
-        state0 = self.initialise_start_time('ket', 'qobj')
+        state0 = self.initialise_coherent('ket', 'qobj')
 
         #state0 = tensor(coherent(self.N, 1.), coherent(self.N, 1.))
 
