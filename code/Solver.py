@@ -45,7 +45,8 @@ class Solver(object):
         # Assign values to constants
         self.function = str(self.args['function'])
         self.state = str(self.args['state'])
-        self.squeezing = str(self.args['squeezing'])
+        self.squeezing = float(self.args['squeezing'])
+        self.displace = float(self.args['displace'])
         self.start_time = float(self.args['start_time'])
         self.N = int(self.args['N'])
         self.M = int(self.args['M'])
@@ -80,7 +81,7 @@ class Solver(object):
             self.triple_state_evolution()
 
 
-    def initialise_coherent(self, arg, type = 'matrix'):
+    def initialise_coherent(self, arg, objtype = 'matrix'):
         """
         Parameters:
             arg: string, determines type 'ket' or 'dm' of outputted state
@@ -93,14 +94,14 @@ class Solver(object):
             terms.append(exp(-absolute(self.alpha)**2/2.)*self.alpha**n/(sqrt(factorial(n)))*exp(1j*(self.start_time-sin(self.start_time))*(self.k*n - self.gbar)**2)*exp(((self.k*n - self.gbar)*eta*exp(1j*self.start_time)*self.beta - (self.k*n - self.gbar)*(1 - exp(1j*self.start_time))*exp(-1j*self.start_time)*self.beta)/2.)*tensor(fock(self.N,n), coherent(self.N, self.beta*exp(-1j*self.start_time) + (self.k*n- self.gbar)*(1 - exp(-1j*self.start_time)))))
         state = sum(terms)
         if arg =='ket':
-            if type == 'numpy':
+            if objstype == 'numpy':
                 return state/sqrt(state.overlap(state)).full()
-            if type == 'qobj':
+            if objtype == 'qobj':
                 return state/sqrt(state.overlap(state))
         if arg == 'dm':
-            if type == 'numpy':
+            if objtype == 'numpy':
                 return (state*state.dag()/state.overlap(state)).full() # turn into dm and normalise.
-            if type == 'qobj':
+            if objtype == 'qobj':
                 return (state*state.dag()/state.overlap(state)) # turn into dm and normalise.
 
 
@@ -130,9 +131,28 @@ class Solver(object):
                 beta_terms.append(exp(-absolute(self.beta)**2/2.)*self.beta**n/(sqrt(factorial(n)))*fock(self.N,n))
             return tensor(sum(alpha_terms), sum(beta_terms)).full()
 
-    def intialise_squeezed(self, s):
-        return squeeze(self.N, self.sqeezing, offset = 0)
+    def initialise_squeezed(self, s, arg, objtype = 'matrix'):
+        if arg == 'ket':
+            if objtype == 'qobj':
+                d = displace(self.N, self.displace)
+                sq = squeeze(self.N, self.squeezing)
+                print sq
+                state = tensor(d*s*basis(self.N, 0), d*s*basis(self.N, 0))
+                state = state/sqrt(state.overlap(state))
+                print state.overlap(state)
+                return state
 
+            if objtype == 'matrix':
+                return tensor(squeeze(self.N, self.squeezing), squeeze(self.M, self.squeezing)).full()
+
+    def initialise_squeezed2(self, z, arg, objtype = 'qobj'):
+        terms = []
+        for n in range(0, self.N/2):
+            terms.append(((z-1)/(2*(z+1)))**n *sqrt(factorial(2*n))/(factorial(n))*basis(self.N, n))
+        state = sum(terms)
+        state = state/(sqrt(state.overlap(state)))
+        print state.overlap(state)
+        return state
 
     def run_RKF45(self):
         # Create the vector
@@ -208,27 +228,43 @@ class Solver(object):
         
         #state0 = tensor(coherent(self.N, self.alpha), coherent(self.N, self.beta))
 
-        state0 = self.initialise_coherent('ket', 'qobj')
-
+        if self.state == 'coherent':
+            state0 = self.initialise_coherent('ket', 'qobj')
+        if self.state == 'squeezed':
+            state0 = self.initialise_squeezed2(self.squeezing, 'ket', 'qobj')
         #state0 = tensor(coherent(self.N, 1.), coherent(self.N, 1.))
 
         g0 = self.gbar
 
         self.gbar = g0 - 2*self.h
         Hamiltonianm2 = b.dag()*b + (b.dag() + b)*(self.gbar - self.k*a.dag()*a) 
-        statem2 = self.initialise_start_time('ket', 'qobj')
-
+        if self.state == 'coherent':
+            statem2 = self.initialise_coherent('ket', 'qobj')
+        if self.state == 'squeezed':
+            statem2 = self.initialise_squeezed2(self.squeezing, 'ket', 'qobj')
+        
         self.gbar = g0 - self.h
         Hamiltonianm1 = b.dag()*b + (b.dag() + b)*(self.gbar - self.k*a.dag()*a) 
-        statem1 = self.initialise_start_time('ket', 'qobj')
+        if self.state == 'coherent':
+            statem1 = self.initialise_coherent('ket', 'qobj')
+        if self.state == 'squeezed':
+            statem1 = self.initialise_squeezed2(self.squeezing, 'ket', 'qobj')
+
 
         self.gbar = g0 + self.h
         Hamiltonian1 =  b.dag()*b + (b.dag() + b)*(self.gbar - self.k*a.dag()*a) 
-        state1 = self.initialise_start_time('ket','qobj')
+        if self.state == 'coherent':
+            state1 = self.initialise_coherent('ket', 'qobj')
+        if self.state == 'squeezed':
+            state1 = self.initialise_squeezed2(self.squeezing, 'ket', 'qobj')
 
         self.gbar = g0 + 2*self.h
         Hamiltonian2 =  b.dag()*b + (b.dag() + b)*(self.gbar - self.k*a.dag()*a) 
-        state2 = self.initialise_start_time('ket','qobj')
+        if self.state == 'coherent':
+            state2 = self.initialise_coherent('ket', 'qobj')
+        if self.state == 'squeezed':
+            state2 = self.initialise_squeezed2(self.squeezing, 'ket', 'qobj')
+
 
         # Set options
         options = Options()

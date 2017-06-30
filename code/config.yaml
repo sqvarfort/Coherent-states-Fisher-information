@@ -1,11 +1,12 @@
-function: triple_state_evolution
+function: state_evolution
 state: squeezed
-squeezing: 0
+squeezing: 0.1
+displace: 0.5
 start_time: 0
 time: 6.28 # This is a dimensionless number - we set it to 2Pi to achieve a full orbit.
-steps: 300 # The number of steps significantly affects the performance of the mcsolve
-N: 30 # Everything in the range 50 to 100 seems to give good results
-M: 30
+steps: 400 # The number of steps significantly affects the performance of the mcsolve
+N: 10 # Everything in the range 50 to 100 seems to give good results
+M: 10
 alpha: 1. # Light field state
 beta: 1. # Mirror state
 gbar: 1. 
