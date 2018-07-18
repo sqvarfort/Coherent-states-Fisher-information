@@ -1,16 +1,12 @@
 """
-Solver HPC Version
--------------------------
-In this version of the code, we have optimised it to run on the Legion cluster.
-We have:
-- Removed all output
-- Reorganised it so that after each iteration, the saved state is used for calculating all possible Fisher informations.
-- Changed it so that states are not saved.
+Description: Calculates the Fisher information for a gravity measurement
+Input: config.yaml 
+
 """
 
-import gc
 from qutip import *
 import yaml
+import gc #Garbage collection
 from numpy import *
 import matplotlib.pyplot as plt
 from scipy import constants as cp
@@ -20,16 +16,15 @@ import datetime
 import time
 from scipy.special import factorial
 from math import isnan as mathisnan
-from multiprocessing import Process, freeze_support, Pool
-from RKF45 import RKF45 
-import copy_reg
+#from RKF45 import RKF45 
 import types
 import tables
 
 
 class Solver(object):
     """
-    Description: Class that includes the simulation run and more.  
+    Description: Class that includes the option run and more.  
+    Input: config.yaml file. 
     """
     def __init__(self, config):
         # Extract arguments from the config file
@@ -40,7 +35,7 @@ class Solver(object):
         elif type(config) == dict:
             self.args.update(config)
         else:
-            print "Failed to load config arguments"
+            print("Failed to load config arguments")
 
         # Assign values to constants
         self.function = str(self.args['function'])
@@ -67,17 +62,17 @@ class Solver(object):
         self.hmin = float(self.args['hmin'])
         self.gamma = float(self.args['gamma'])
 
-        print "Hilbert space is: " + str([self.N, self.M])
+        print("Hilbert space is: " + str([self.N, self.M]))
 
         # Select the function to run
         if self.function == 'state_evolution':
-            print "Starting function: state_evolution"
+            print("Starting function: state_evolution")
             self.state_evolution()
         if self.function == 'RK4F':
-            print "Starting function: RK4F"
+            print("Starting function: RK4F")
             self.run_RKF45()
         if self.function == 'triple_state_evolution':
-            print "Starting function: triple_state_evolution"
+            print("Starting function: triple_state_evolution")
             self.triple_state_evolution()
 
 
@@ -94,7 +89,7 @@ class Solver(object):
             terms.append(exp(-absolute(self.alpha)**2/2.)*self.alpha**n/(sqrt(factorial(n)))*exp(1j*(self.start_time-sin(self.start_time))*(self.k*n - self.gbar)**2)*exp(((self.k*n - self.gbar)*eta*exp(1j*self.start_time)*self.beta - (self.k*n - self.gbar)*(1 - exp(1j*self.start_time))*exp(-1j*self.start_time)*self.beta)/2.)*tensor(fock(self.N,n), coherent(self.N, self.beta*exp(-1j*self.start_time) + (self.k*n- self.gbar)*(1 - exp(-1j*self.start_time)))))
         state = sum(terms)
         if arg =='ket':
-            if objstype == 'numpy':
+            if objtype == 'numpy':
                 return state/sqrt(state.overlap(state)).full()
             if objtype == 'qobj':
                 return state/sqrt(state.overlap(state))
@@ -136,10 +131,10 @@ class Solver(object):
             if objtype == 'qobj':
                 d = displace(self.N, self.displace)
                 sq = squeeze(self.N, self.squeezing)
-                print sq
+                print(sq)
                 state = tensor(d*s*basis(self.N, 0), d*s*basis(self.N, 0))
                 state = state/sqrt(state.overlap(state))
-                print state.overlap(state)
+                print(state.overlap(state))
                 return state
 
             if objtype == 'matrix':
@@ -151,15 +146,14 @@ class Solver(object):
             terms.append(((z-1)/(2*(z+1)))**n *sqrt(factorial(2*n))/(factorial(n))*basis(self.N, n))
         state = sum(terms)
         state = state/(sqrt(state.overlap(state)))
-        print state.overlap(state)
-        return state
+        return tensor(state, state)
 
     def run_RKF45(self):
         # Create the vector
         states = []
         dstates = []
         statevec = array([self.initialise_coherent('dm'), self.initialise_d_start_time('dm')])
-        print "Starting simulation."
+        print("Starting simulation.")
         # Set decoherence
         self.Lind = sqrt(self.chi)*tensor(destroy(self.N), qeye(self.M))
         self.LinddagLind = self.Lind.dag()*self.Lind
@@ -180,9 +174,9 @@ class Solver(object):
             outfile.write(yaml.dump(self.args, default_flow_style = False))
 
         results = RKF45(self.Lindblad, self.start_time, self.time, statevec, self.tolerance, self.hmax, self.hmin, self.N)
-        print "Simulation completed."
+        print("Simulation completed.")
         toc = time.clock()
-        print "Time required: " + str((toc-tic)/60) + " minutes"
+        print("Time required: " + str((toc-tic)/60) + " minutes")
 
         # Save results to files
         save(foldername + "/times", results[0])
@@ -236,7 +230,7 @@ class Solver(object):
 
         g0 = self.gbar
 
-        self.gbar = g0 - 2*self.h
+        self.gbar = g0 - 2.*self.h
         Hamiltonianm2 = b.dag()*b + (b.dag() + b)*(self.gbar - self.k*a.dag()*a) 
         if self.state == 'coherent':
             statem2 = self.initialise_coherent('ket', 'qobj')
@@ -258,11 +252,13 @@ class Solver(object):
         if self.state == 'squeezed':
             state1 = self.initialise_squeezed2(self.squeezing, 'ket', 'qobj')
 
-        self.gbar = g0 + 2*self.h
+        self.gbar = g0 + 2.*self.h
         Hamiltonian2 =  b.dag()*b + (b.dag() + b)*(self.gbar - self.k*a.dag()*a) 
         if self.state == 'coherent':
+            print("Initialising coherent state")
             state2 = self.initialise_coherent('ket', 'qobj')
         if self.state == 'squeezed':
+            print("Initialising squeezed state")
             state2 = self.initialise_squeezed2(self.squeezing, 'ket', 'qobj')
 
 
@@ -281,7 +277,7 @@ class Solver(object):
         # Perform simulation, trace out the states then delete the results. This is done to preserve memory. 
 
 
-        print "Starting simulation"
+        print("Starting simulation")
         results0 = mesolve(Hamiltonian0, state0, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
         for state in results0.states:
             psi0.append(state.ptrace(0))
@@ -299,7 +295,6 @@ class Solver(object):
             psi2.append(state.ptrace(0))
         del results2
         gc.collect()
-
 
         resultsm1 = mesolve(Hamiltonianm1, statem1, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
         for state in resultsm1.states:
@@ -323,24 +318,19 @@ class Solver(object):
         for state in psi0:
             x_exp.append(expect(x, state))
             p_exp.append(expect(p, state))
-        plt.figure(figsize=(10,7.5))
-        plt.plot(x_exp, p_exp)
-        plt.show()
+        #plt.figure(figsize=(10,7.5))
+        #plt.plot(x_exp, p_exp)
+        #plt.show()
  
         tic = time.clock()
 
 
-        print "Calculating Fisher information"
+        print("Calculating Fisher information")
         [fisher_result_pos, fisher_result_mom] = self.triple_Fisher(psim2, psim1, psi0, psi1, psi2)
 
         toc = time.clock()
-        print "Time required to do that: " + str((toc-tic)/60) + " minutes, or " + str((toc-tic)/(60*60)) + "hours."
+        print("Time required to do that: " + str((toc-tic)/60) + " minutes, or " + str((toc-tic)/(60*60)) + "hours.")
 
-        plt.figure(figsize=(10,7.5))
-        plt.plot(times, fisher_result_pos)
-        plt.show()
-        plt.plot(times, fisher_result_mom)
-        plt.show()
 
         # Create folder if it does not exist
         foldername = self.folder + "/simulation" + st
@@ -356,6 +346,12 @@ class Solver(object):
         save(foldername + "/fisher_momentum", fisher_result_mom)
         save(foldername + "/times", times)
 
+
+        plt.figure(figsize=(10,7.5))
+        plt.plot(times, fisher_result_pos)
+        plt.show()
+        plt.plot(times, fisher_result_mom)
+        plt.show()
 
     def triple_state_evolution(self):
         """
@@ -409,28 +405,28 @@ class Solver(object):
 
         # Solve each system for a psi with different g 
         results0 = mesolve(Hamiltonian0, state0, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
-        print "Tracing out states"
+        print("Tracing out states")
         for state in results0.states:
             psi0.append(state.ptrace(2))
         del results0
         gc.collect()
 
         results1 = mesolve(Hamiltonian1, state1, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
-        print "Tracing out states"
+        print("Tracing out states")
         for state in results1.states:
             psi1.append(state.ptrace(2))
         del results1
         gc.collect()
 
         results2 = mesolve(Hamiltonian2, state2, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
-        print "Tracing out states"
+        print("Tracing out states")
         for state in results2.states:
             psi2.append(state.ptrace(2))
         del results2
         gc.collect()
 
         resultsm1 = mesolve(Hamiltonianm1, statem1, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
-        print "Tracing out states"
+        print("Tracing out states")
         for state in resultsm1.states:
             psim1.append(state.ptrace(2))
         del resultsm1
@@ -438,7 +434,7 @@ class Solver(object):
 
 
         resultsm2 = mesolve(Hamiltonianm2, statem2, times, c_ops = deco, e_ops = [], args = [], progress_bar = True)
-        print "Tracing out states"
+        print("Tracing out states")
         for state in resultsm2.states:
             psim2.append(state.ptrace(2))
         del resultsm2
@@ -456,17 +452,17 @@ class Solver(object):
         plt.plot(x_exp, p_exp)
         plt.show()
         
-        print "Calculating Fisher information by tracing out states"
+        print("Calculating Fisher information by tracing out states")
         tic = time.clock()
 
         # Here we trace out the states. I wonder however if it wouldn't be faster to just calculate the expectation values. 
-        print "Tracing out states"
+        print("Tracing out states")
         # Trace out system AB, to be left with the light state
 
         fisher_result_pos, fisher_result_mom = self.triple_Fisher(psim2, psim1, psi0, psi1, psi2)
 
         toc = time.clock()
-        print "Time required to do that: " + str((toc-tic)/60) + " minutes, or " + str((toc-tic)/(60*60)) + "hours."
+        print("Time required to do that: " + str((toc-tic)/60) + " minutes, or " + str((toc-tic)/(60*60)) + "hours.")
 
         plt.figure(figsize=(10,7.5))
         plt.plot(times, fisher_result_pos)
@@ -543,7 +539,7 @@ class Solver(object):
         fisher_info_pos = array([])
         fisher_info_mom = array([])
 
-        print "Calculating differentials"
+        print("Calculating differentials")
         # Cycle through the probs and work out the differentials
         # Use a 2nd order central difference theorem
         for timestep in range(0, len(probs0_pos)):
@@ -581,5 +577,5 @@ class Solver(object):
 
 
 if __name__ == "__main__":
-    freeze_support()
     system = Solver('config.yaml')
+    system.state_evolution()
