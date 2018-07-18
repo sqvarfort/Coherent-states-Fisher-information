@@ -1,20 +1,20 @@
 function: state_evolution
-state: squeezed
-squeezing: 0.1
+state: coherent
+squeezing: 10
 displace: 0.5
 start_time: 0
-time: 6.28 # This is a dimensionless number - we set it to 2Pi to achieve a full orbit.
-steps: 400 # The number of steps significantly affects the performance of the mcsolve
+time: 9.42 # This is a dimensionless number - we set it to 2Pi to achieve a full orbit.
+steps: 100 # The number of steps significantly affects the performance of the mcsolve
 N: 10 # Everything in the range 50 to 100 seems to give good results
 M: 10
 alpha: 1. # Light field state
 beta: 1. # Mirror state
 gbar: 1. 
 k: 1.
-chi: 0.0   # Light field decoherence
+chi: 0.05   # Light field decoherence
 tolerance: 0.001  # RKF tolerance
 h: 0.01 # Step-size for the numerical derivative and values of gbar
 hmax: 1.
 hmin: 0.00001
-folder: Fisher_decoherence
+folder: more_decoherence
 gamma: 0.5 #Coupling strengths between a and c light modes 
