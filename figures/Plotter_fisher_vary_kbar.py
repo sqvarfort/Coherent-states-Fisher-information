@@ -148,9 +148,13 @@ def plot_fisher(times, data, chirange, filename):
     #plt.rc('texts', usetex=True)
     #plt.rc('font', family='serif')
     plt.xlabel('Time $t$')
-    plt.ylabel(r'Fisher information $I_F$ (s$^4$/m$^2$)')
+    plt.ylabel(r'Fisher information ' +  r'$\bar{I}_F$')
     ax = plt.subplot(111)
+    [i.set_linewidth(2) for i in ax.spines.itervalues()]
+
     ax.tick_params(axis='both', which='major', pad=10)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+
     #plt.title('Fisher Information vs. time for ' + r'$\bar{g} = $' + str(self.args['gbar']) + ', $k = $' + str(self.k) + ', $N = $' + str(self.N) + ', $h = $' + str(self.h), size = 20, y=1.02)
     #plt.gca().grid(True, linewidth = 2)
 
@@ -159,9 +163,9 @@ def plot_fisher(times, data, chirange, filename):
     #plt.plot(times[2], data[2], '-o', color = 'r', label = '$9$ photons')
 
     #plt.plot(times[0], data[0], color = 'b', label = 'Analytic')
-    plt.plot(times[0], data[0], '-o', color = 'k', markeredgewidth=0.0,  label = r'$\bar{k}= 1$', markersize = 2)
-    plt.plot(times[1], data[1], '-o', color = 'b', markeredgewidth=0.0, label = r'$\bar{k} = 2$', markersize = 2)
-    plt.plot(times[2], data[2], '-o', color = 'r', markeredgewidth=0.0, label = r'$\bar{k} = 3$', markersize = 2)
+    plt.plot(times[0], data[0], '-o', color = 'k', markeredgewidth=0.0,  label = r'$\bar{k}= 1$', markersize = 5, linewidth=5)
+    plt.plot(times[1], data[1], '-o', color = 'b', markeredgewidth=0.0, label = r'$\bar{k} = 2$', markersize = 5, linewidth=5)
+    plt.plot(times[2], data[2], '-o', color = 'r', markeredgewidth=0.0, label = r'$\bar{k} = 3$', markersize = 5, linewidth=5)
 
     plt.xticks([2.8, pi, 3*pi/2,  2*pi, 5*pi/2, 3*pi], [' ', r'$\pi$', r'$3\pi/2$', r'$2\pi$', r'$5\pi/2$', r'$3\pi$'], size = 40)
     #plt.xticks([ 0, pi/2, pi, 3*pi/2,  2*pi], [r'$0$', r'$\pi/2$', r'$\pi$', r'$3\pi/2$', r'$2\pi$'])
@@ -169,10 +173,11 @@ def plot_fisher(times, data, chirange, filename):
     #plt.yticks([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5], [r'$0.0$', r'$0.5$', r'$1.0$', r'$1.5$', r'$2.0$', r'$2.5$', r'$3.0$', r'$3.5$'], size = 30)
     #plt.yticks([0.0, 1000, 2000, 3000, 4000, 5000, 6000], [r'$0.0$', r'$1000$', r'$2000$', r'$3000$', r'$4000$', r'$5000$', r'$6000$'], size = 40)
     #plt.yticks([-50, 0.0, 100, 200, 300, 350], [r'', r'$0$', r'$100$', r'$200$', r'$300$', r'$ $'])
-    plt.yticks([-500, 0.0, 1000, 2000, 3000, 4000, 5000, 6000], [' ', r'$0$', r'$1000$', r'$2000$',  r'$3000$', r'$4000$', r'$5000$', ' '])
+    #plt.yticks([-500, 0.0, 1000, 2000, 3000, 4000, 5000, 6000], [' ', r'$0$', r'$1000$', r'$2000$',  r'$3000$', r'$4000$', r'$5000$', r'$6000$'])
     plt.subplots_adjust(bottom=0.15,left = 0.25) 
     #plt.xlim([0, pi/2])
     #plt.ylim([0,300])
+    plt.ylim(ymin=-500)
 
     plt.legend(loc = 1)
     path = os.path.join("Fisher_vary_kbar")
